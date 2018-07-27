@@ -130,7 +130,7 @@ func DynamicSelectOne(dbKey string, dest interface{}, basicSql string, whereMap 
 	}
 	sql := RollingSql(basicSql, whereMap, orderBy, Asc, limit, offset)
 	args = RemoveZero(args)
-	return db.Get(dest, sql, args)
+	return db.Get(dest, sql, args...)
 }
 
 //select objects array from database,using dataSource whose dbKey is specific and 'default' by empty key
@@ -143,7 +143,7 @@ func DynamicSelect(dbKey string, dest interface{}, basicSql string, whereMap [][
 	}
 	sql := RollingSql(basicSql, whereMap, orderBy, Asc, limit, offset)
 	args = RemoveZero(args)
-	return db.Select(dest, sql, args)
+	return db.Select(dest, sql, args...)
 }
 
 //dynamic update an object
@@ -156,7 +156,7 @@ func DynamicUpdate(dbKey string, basicSql string, whereMap [][]string,  args ...
 	}
 	sql := RollingSql(basicSql, whereMap, nil, "", -1, -1)
 	args = RemoveZero(args)
-	_,er:=db.Exec( sql, args)
+	_,er:=db.Exec( sql, args...)
 	return er
 }
 
@@ -170,7 +170,7 @@ func DynamicSelectOneSpecificTx(tx *sqlx.Tx, dest interface{}, basicSql string, 
 	}
 	sql := RollingSql(basicSql, whereMap, orderBy, Asc, limit, offset)
 	args = RemoveZero(args)
-	return tx.Get(dest, sql, args)
+	return tx.Get(dest, sql, args...)
 }
 
 //Only prepare exec without tx.RollBack() and tx.Commit()
@@ -180,7 +180,7 @@ func DynamicSelectSpecificTx(tx *sqlx.Tx, dest interface{}, basicSql string, whe
 	}
 	sql := RollingSql(basicSql, whereMap, orderBy, Asc, limit, offset)
 	args = RemoveZero(args)
-	return tx.Select(dest, sql, args)
+	return tx.Select(dest, sql, args...)
 }
 
 //Only prepare exec without tx.RollBack() and tx.Commit()
@@ -190,7 +190,7 @@ func DynamicUpdateSpecificTx(tx *sqlx.Tx, basicSql string, whereMap [][]string, 
 	}
 	sql := RollingSql(basicSql, whereMap, nil, "", -1, -1)
 	args = RemoveZero(args)
-	_,er:=tx.Exec( sql, args)
+	_,er:=tx.Exec( sql, args...)
 	return er
 }
 
@@ -269,12 +269,12 @@ func RollingSql(basicSql string, whereMap [][]string, orderBy []string, Asc stri
 		sql = sql + " limit " + strconv.Itoa(limit) + " offset " + strconv.Itoa(offset)
 	}
 	//fmt.Println(sql)
-	sql = ReplaceQuestionToDollar(sql)
+	sql,_ = ReplaceQuestionToDollar(sql)
 	return sql
 }
 
 //将sql语句中的?转换成$i
-func ReplaceQuestionToDollar(sql string) string {
+func ReplaceQuestionToDollar(sql string) (string,int) {
 	var temp = 1
 	start := 0
 	var i = 0
@@ -288,10 +288,35 @@ L:
 		}
 
 		if i == len(sql)-1 {
-			return sql
+			return sql,temp
 		}
 	}
-	return sql
+	return sql,temp
+}
+
+//将sql语句中的?转换成$i, i存在初始值offset
+func ReplaceQuestionToDollarInherit(sql string,offset int) (string,int) {
+	if offset <1 {
+		return ReplaceQuestionToDollar(sql)
+	}
+	temp := offset
+
+	start := 0
+	var i = 0
+L:
+	for i = start; i < len(sql); i++ {
+		if string(sql[i]) == "?" {
+			sql = string(sql[:i]) + "$" + strconv.Itoa(temp) + string(sql[i+1:])
+			temp++
+			start = i + 2
+			goto L
+		}
+
+		if i == len(sql)-1 {
+			return sql,temp
+		}
+	}
+	return sql,temp
 }
 
 func RemoveZero(slice []interface{}) []interface{} {

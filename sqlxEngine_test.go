@@ -5,8 +5,14 @@ import (
 	"time"
 )
 
+type Class struct{
+	Id int `xorm:"id"`
+	Age int `xorm:"age"`
+	Name string `xorm:"name"`
+	Sal float64 `xorm:"sal"`
+}
 func Init(){
-	DataSource("postgres","postgres://postgres:123@localhost:5432/postgres?sslmode=disable")
+	DataSource("postgres","postgres://postgres:123@localhost:5432/test?sslmode=disable")
 	DefaultConfig()
 }
 func TestRollingSql(t *testing.T) {
@@ -18,6 +24,7 @@ func TestRollingSql(t *testing.T) {
 
 func TestReplaceQuestionToDollar(t *testing.T) {
 	t.Log(ReplaceQuestionToDollar("where   1 = ? and name = ? or name < ? and name > ? and created between ? and ? "))
+	t.Log(ReplaceQuestionToDollarInherit("where   1 = ? and name = ? or name < ? and name > ? and created between ? and ?",7))
 }
 
 func TestGenWhereByStruct(t *testing.T) {
@@ -46,3 +53,46 @@ func TestGenWhereByStruct(t *testing.T) {
 
 	t.Log(GenWhereByStruct(tmp))
 }
+
+func TestSelect(t *testing.T){
+	Init()
+	var clss = make([]Class,0)
+	er:=Select("default",&clss,"select * from class")
+	if er!=nil {
+		t.Fatal(er.Error())
+	}
+	t.Log(clss)
+}
+func TestSelectOne(t *testing.T) {
+	Init()
+	var cls Class
+	er:=SelectOne("default",&cls,"select * from class where id = 2")
+	if er!=nil {
+		t.Fatal(er.Error())
+	}
+	t.Log(cls)
+
+	var count =0
+	er=SelectOne("default",&count,"select count(id) from class")
+	if er!=nil {
+		t.Fatal(er.Error())
+	}
+	t.Log(count)
+}
+
+func TestDelete(t *testing.T) {
+	Init()
+	er:= Delete("default","delete from class where id = 1")
+	if er!=nil {
+		t.Fatal(er.Error())
+	}
+}
+
+func TestUpdate(t *testing.T) {
+	Init()
+	er:=Update("default","update class set age=11 where id =2")
+	if er!=nil {
+		t.Fatal(er.Error())
+	}
+}
+
