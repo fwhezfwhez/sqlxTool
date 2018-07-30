@@ -59,10 +59,11 @@ func DataSource(driverName string, dataSource string) (*sqlx.DB, error) {
 
 	return db, nil
 }
+
 //import a datasource by initialed instance
-func DataSourceImport(key string,db *sqlx.DB){
+func DataSourceImport(key string, db *sqlx.DB) {
 	Dbs[key] = db
-	LocalSessions[key],_ = db.Beginx()
+	LocalSessions[key], _ = db.Beginx()
 }
 
 func NewDataSource(key string, driverName string, dataSource string) (*sqlx.DB, error) {
@@ -88,7 +89,7 @@ func NewDataSource(key string, driverName string, dataSource string) (*sqlx.DB, 
 }
 
 //config a db's max idle and open connection
-func Config(key string,printSQL bool, maxIdleConns int, maxOpenConns int) error {
+func Config(key string, printSQL bool, maxIdleConns int, maxOpenConns int) error {
 	if key == "" {
 		for k, _ := range Dbs {
 			Dbs[k].SetMaxIdleConns(maxIdleConns)
@@ -136,10 +137,7 @@ func DynamicSelectOne(dbKey string, dest interface{}, basicSql string, whereMap 
 	}
 	sql := RollingSql(basicSql, whereMap, orderBy, Asc, limit, offset)
 	args = RemoveZero(args)
-	if PrintSQL==true{
-		fmt.Println(sql)
-		fmt.Println(args...)
-	}
+	PrintSQLDetail(sql, args...)
 	return db.Get(dest, sql, args...)
 }
 
@@ -153,15 +151,12 @@ func DynamicSelect(dbKey string, dest interface{}, basicSql string, whereMap [][
 	}
 	sql := RollingSql(basicSql, whereMap, orderBy, Asc, limit, offset)
 	args = RemoveZero(args)
-	if PrintSQL==true{
-		fmt.Println(sql)
-		fmt.Println(args...)
-	}
+	PrintSQLDetail(sql, args...)
 	return db.Select(dest, sql, args...)
 }
 
 //dynamic update an object
-func DynamicUpdate(dbKey string, basicSql string, whereMap [][]string,  args ...interface{}) error{
+func DynamicUpdate(dbKey string, basicSql string, whereMap [][]string, args ...interface{}) error {
 	var db *sqlx.DB
 	if dbKey == "" {
 		db = Dbs["default"]
@@ -170,124 +165,97 @@ func DynamicUpdate(dbKey string, basicSql string, whereMap [][]string,  args ...
 	}
 	sql := RollingSql(basicSql, whereMap, nil, "", -1, -1)
 	args = RemoveZero(args)
-	if PrintSQL==true{
-		fmt.Println(sql)
-		fmt.Println(args...)
-	}
-	_,er:=db.Exec( sql, args...)
+	PrintSQLDetail(sql, args...)
+	_, er := db.Exec(sql, args...)
 	return er
 }
 
-func DynamicInsert(dbKey string,basicSql string,columns []string,args ...interface{}){
+func DynamicInsert(dbKey string, basicSql string, columns []string, args ...interface{}) {
 
 }
 
 //Only prepare exec without tx.RollBack() and tx.Commit()
 func DynamicSelectOneSpecificTx(tx *sqlx.Tx, dest interface{}, basicSql string, whereMap [][]string, orderBy []string, Asc string, limit int, offset int, args ...interface{}) error {
-	if tx==nil {
+	if tx == nil {
 		return errors.New("tx is nil,please use Db.BeginTran() to create a tx")
 	}
 	sql := RollingSql(basicSql, whereMap, orderBy, Asc, limit, offset)
 	args = RemoveZero(args)
-	if PrintSQL==true{
-		fmt.Println(sql)
-		fmt.Println(args...)
-	}
+	PrintSQLDetail(sql, args...)
 	return tx.Get(dest, sql, args...)
 }
 
 //Only prepare exec without tx.RollBack() and tx.Commit()
 func DynamicSelectSpecificTx(tx *sqlx.Tx, dest interface{}, basicSql string, whereMap [][]string, orderBy []string, Asc string, limit int, offset int, args ...interface{}) error {
-	if tx==nil {
+	if tx == nil {
 		return errors.New("tx is nil,please use Db.BeginTran() to create a tx")
 	}
 	sql := RollingSql(basicSql, whereMap, orderBy, Asc, limit, offset)
 	args = RemoveZero(args)
-	if PrintSQL==true{
-		fmt.Println(sql)
-		fmt.Println(args...)
-	}
+	PrintSQLDetail(sql, args...)
 	return tx.Select(dest, sql, args...)
 }
 
 //Only prepare exec without tx.RollBack() and tx.Commit()
-func DynamicUpdateSpecificTx(tx *sqlx.Tx, basicSql string, whereMap [][]string,  args ...interface{}) error{
-	if tx==nil {
+func DynamicUpdateSpecificTx(tx *sqlx.Tx, basicSql string, whereMap [][]string, args ...interface{}) error {
+	if tx == nil {
 		return errors.New("tx is nil,please use Db.BeginTran() to create a tx")
 	}
 	sql := RollingSql(basicSql, whereMap, nil, "", -1, -1)
 	args = RemoveZero(args)
-	if PrintSQL==true{
-		fmt.Println(sql)
-		fmt.Println(args...)
-	}
-	_,er:=tx.Exec( sql, args...)
+	PrintSQLDetail(sql, args...)
+	_, er := tx.Exec(sql, args...)
 	return er
 }
 
 //normal query one object
-func SelectOne(dbKey string, dest interface{},sql string,args...interface{})error{
+func SelectOne(dbKey string, dest interface{}, sql string, args ...interface{}) error {
 	var db *sqlx.DB
 	if dbKey == "" {
 		db = Dbs["default"]
 	} else {
 		db = Dbs[dbKey]
 	}
-	if PrintSQL==true{
-		fmt.Println(sql)
-		fmt.Println(args...)
-	}
-	return db.Get(dest,sql,args...)
+	PrintSQLDetail(sql, args...)
+	return db.Get(dest, sql, args...)
 }
+
 //normal query objects array
-func Select(dbKey string, dest interface{},sql string,args...interface{})error{
+func Select(dbKey string, dest interface{}, sql string, args ...interface{}) error {
 	var db *sqlx.DB
 	if dbKey == "" {
 		db = Dbs["default"]
 	} else {
 		db = Dbs[dbKey]
 	}
-	if PrintSQL==true{
-		fmt.Println(sql)
-		fmt.Println(args...)
-	}
-	return db.Select(dest,sql,args...)
+	PrintSQLDetail(sql, args...)
+	return db.Select(dest, sql, args...)
 }
 
 //normal delete
-func Delete(dbKey string,sql string,args...interface{})error{
-	if PrintSQL==true{
-		fmt.Println(sql)
-		fmt.Println(args...)
-	}
-	return Exec(dbKey,sql ,args...)
+func Delete(dbKey string, sql string, args ...interface{}) error {
+	PrintSQLDetail(sql, args...)
+	return Exec(dbKey, sql, args...)
 }
 
 //normal update
-func Update(dbKey string,sql string,args...interface{})error{
-	if PrintSQL==true{
-		fmt.Println(sql)
-		fmt.Println(args...)
-	}
-	return Exec(dbKey,sql ,args...)
+func Update(dbKey string, sql string, args ...interface{}) error {
+	PrintSQLDetail(sql, args...)
+	return Exec(dbKey, sql, args...)
 }
 
 //normal exec
-func Exec(dbKey string,sql string,args...interface{})error{
+func Exec(dbKey string, sql string, args ...interface{}) error {
 	var db *sqlx.DB
 	if dbKey == "" {
 		db = Dbs["default"]
 	} else {
 		db = Dbs[dbKey]
 	}
-	if PrintSQL==true{
-		fmt.Println(sql)
-		fmt.Println(args...)
-	}
-	_,er :=db.Exec(sql,args...)
+	PrintSQLDetail(sql, args...)
+	_, er := db.Exec(sql, args...)
 	return er
 }
-
 
 func RollingSql(basicSql string, whereMap [][]string, orderBy []string, Asc string, limit int, offset int) string {
 	var sql = basicSql
@@ -320,12 +288,12 @@ func RollingSql(basicSql string, whereMap [][]string, orderBy []string, Asc stri
 		sql = sql + " limit " + strconv.Itoa(limit) + " offset " + strconv.Itoa(offset)
 	}
 	//fmt.Println(sql)
-	sql,_ = ReplaceQuestionToDollar(sql)
+	sql, _ = ReplaceQuestionToDollar(sql)
 	return sql
 }
 
 //将sql语句中的?转换成$i
-func ReplaceQuestionToDollar(sql string) (string,int) {
+func ReplaceQuestionToDollar(sql string) (string, int) {
 	var temp = 1
 	start := 0
 	var i = 0
@@ -339,15 +307,15 @@ L:
 		}
 
 		if i == len(sql)-1 {
-			return sql,temp
+			return sql, temp
 		}
 	}
-	return sql,temp
+	return sql, temp
 }
 
 //将sql语句中的?转换成$i, i存在初始值offset
-func ReplaceQuestionToDollarInherit(sql string,offset int) (string,int) {
-	if offset <1 {
+func ReplaceQuestionToDollarInherit(sql string, offset int) (string, int) {
+	if offset < 1 {
 		return ReplaceQuestionToDollar(sql)
 	}
 	temp := offset
@@ -364,10 +332,10 @@ L:
 		}
 
 		if i == len(sql)-1 {
-			return sql,temp
+			return sql, temp
 		}
 	}
-	return sql,temp
+	return sql, temp
 }
 
 func RemoveZero(slice []interface{}) []interface{} {
@@ -395,10 +363,10 @@ func IfZero(arg interface{}) bool {
 			return true
 		}
 	case float32:
-		r:=float64(v)
-		return math.Abs(r-0)<0.0000001
+		r := float64(v)
+		return math.Abs(r-0) < 0.0000001
 	case float64:
-		return math.Abs(v-0)<0.0000001
+		return math.Abs(v-0) < 0.0000001
 	case string:
 		if v == "" || v == "%%" || v == "%" {
 			return true
@@ -415,10 +383,9 @@ func IfZero(arg interface{}) bool {
 	return false
 }
 
-
 //generate where through a where [][]string
-func GenWhere(whereMap [][]string)string {
-	rs:=""
+func GenWhere(whereMap [][]string) string {
+	rs := ""
 	if len(whereMap) != 0 {
 		rs = rs + " where "
 		for _, v := range whereMap {
@@ -428,7 +395,7 @@ func GenWhere(whereMap [][]string)string {
 				continue
 			}
 			if v[2] == "in" {
-				rs = rs + " " + v[0] + " " + v[1] + " " + "in" + " " +v[3]
+				rs = rs + " " + v[0] + " " + v[1] + " " + "in" + " " + v[3]
 				continue
 			}
 			rs = rs + " " + v[0] + " " + v[1] + " " + v[2] + " " + "?"
@@ -438,49 +405,55 @@ func GenWhere(whereMap [][]string)string {
 }
 
 //generate  a where through a struct
-func GenWhereByStruct(in interface{})(string,[]interface{}){
-	vValue :=reflect.ValueOf(in)
-	vType :=reflect.TypeOf(in)
-	var tagTmp =""
-	var whereMap = make([][]string,0)
-	var args = make([]interface{},0)
+func GenWhereByStruct(in interface{}) (string, []interface{}) {
+	vValue := reflect.ValueOf(in)
+	vType := reflect.TypeOf(in)
+	var tagTmp = ""
+	var whereMap = make([][]string, 0)
+	var args = make([]interface{}, 0)
 
-	for i:=0;i<vValue.NumField();i++{
+	for i := 0; i < vValue.NumField(); i++ {
 		tagTmp = vType.Field(i).Tag.Get("column")
-		if tagTmp =="-"||tagTmp==""{
+		if tagTmp == "-" || tagTmp == "" {
 			continue
 		}
-		cons :=strings.Split(tagTmp,",")
+		cons := strings.Split(tagTmp, ",")
 		if !IfZero(vValue.Field(i).Interface()) {
-			if cons[2]=="*like"{
+			if cons[2] == "*like" {
 				cons[2] = "like"
 				args = append(args, "%"+vValue.Field(i).Interface().(string))
-			}else if cons[2]=="like*"{
+			} else if cons[2] == "like*" {
 				cons[2] = "like"
 				args = append(args, vValue.Field(i).Interface().(string)+"%")
-			}else if cons[2]=="*like*" || cons[2]=="like"{
+			} else if cons[2] == "*like*" || cons[2] == "like" {
 				cons[2] = "like"
 				args = append(args, "%"+vValue.Field(i).Interface().(string)+"%")
-			}else{
+			} else {
 				args = append(args, vValue.Field(i).Interface())
 			}
 
-			if len(whereMap)==0 {
-				whereMap = append(whereMap,[]string{
-					"",cons[1],cons[2],
+			if len(whereMap) == 0 {
+				whereMap = append(whereMap, []string{
+					"", cons[1], cons[2],
 				})
-			}else{
-				whereMap = append(whereMap,[]string{
-					cons[0],cons[1],cons[2],
+			} else {
+				whereMap = append(whereMap, []string{
+					cons[0], cons[1], cons[2],
 				})
 			}
 
-			if cons[2] == "between"{
+			if cons[2] == "between" {
 				i++
-				args = append(args,vValue.Field(i).Interface())
+				args = append(args, vValue.Field(i).Interface())
 			}
 		}
 	}
-	where :=GenWhere(whereMap)
-	return where,args
+	where := GenWhere(whereMap)
+	return where, args
+}
+func PrintSQLDetail(sql string, args ...interface{}) {
+	if PrintSQL == true {
+		fmt.Println(fmt.Sprintf("[sqlx]%s[sql]", sql))
+		fmt.Println(fmt.Sprintf("[sqlx]%v[args]", args))
+	}
 }

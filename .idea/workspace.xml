@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="d6fc557e-6b6e-4fa0-9df0-2be5a35392fa" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change beforePath="$PROJECT_DIR$/sqlxEngine.go" afterPath="$PROJECT_DIR$/sqlxEngine.go" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -27,8 +26,8 @@
       <file leaf-file-name="sqlxEngine.go" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/sqlxEngine.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-3923">
-              <caret line="285" column="5" lean-forward="false" selection-start-line="285" selection-start-column="5" selection-end-line="285" selection-end-column="5" />
+            <state relative-caret-position="1199">
+              <caret line="139" column="32" lean-forward="false" selection-start-line="139" selection-start-column="32" selection-end-line="139" selection-end-column="32" />
               <folding>
                 <element signature="e#18#144#0" expanded="true" />
                 <element signature="n#!!block;n#DynamicInsert#0" expanded="false" />
@@ -452,8 +451,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/sqlxEngine.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-3923">
-          <caret line="285" column="5" lean-forward="false" selection-start-line="285" selection-start-column="5" selection-end-line="285" selection-end-column="5" />
+        <state relative-caret-position="1199">
+          <caret line="139" column="32" lean-forward="false" selection-start-line="139" selection-start-column="32" selection-end-line="139" selection-end-column="32" />
           <folding>
             <element signature="e#18#144#0" expanded="true" />
             <element signature="n#!!block;n#DynamicInsert#0" expanded="false" />
