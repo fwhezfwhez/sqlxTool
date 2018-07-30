@@ -8,10 +8,13 @@ import (
 	"strconv"
 	"reflect"
 	"time"
+	"math"
+	"fmt"
 )
 
 var Dbs map[string]*sqlx.DB
 var LocalSessions map[string]*sqlx.Tx
+var PrintSQL bool
 
 func init() {
 	Dbs = make(map[string]*sqlx.DB)
@@ -85,11 +88,12 @@ func NewDataSource(key string, driverName string, dataSource string) (*sqlx.DB, 
 }
 
 //config a db's max idle and open connection
-func Config(key string, maxIdleConns int, maxOpenConns int) error {
+func Config(key string,printSQL bool, maxIdleConns int, maxOpenConns int) error {
 	if key == "" {
 		for k, _ := range Dbs {
 			Dbs[k].SetMaxIdleConns(maxIdleConns)
 			Dbs[k].SetMaxOpenConns(maxOpenConns)
+			PrintSQL = printSQL
 		}
 		return nil
 	} else {
@@ -98,6 +102,7 @@ func Config(key string, maxIdleConns int, maxOpenConns int) error {
 		} else {
 			v.SetMaxOpenConns(maxOpenConns)
 			v.SetMaxIdleConns(maxIdleConns)
+			PrintSQL = printSQL
 		}
 		return nil
 	}
@@ -108,6 +113,7 @@ func DefaultConfig() error {
 	for k, _ := range Dbs {
 		Dbs[k].SetMaxIdleConns(2000)
 		Dbs[k].SetMaxOpenConns(2000)
+		PrintSQL = true
 	}
 	return nil
 }
@@ -130,6 +136,10 @@ func DynamicSelectOne(dbKey string, dest interface{}, basicSql string, whereMap 
 	}
 	sql := RollingSql(basicSql, whereMap, orderBy, Asc, limit, offset)
 	args = RemoveZero(args)
+	if PrintSQL==true{
+		fmt.Println(sql)
+		fmt.Println(args...)
+	}
 	return db.Get(dest, sql, args...)
 }
 
@@ -143,6 +153,10 @@ func DynamicSelect(dbKey string, dest interface{}, basicSql string, whereMap [][
 	}
 	sql := RollingSql(basicSql, whereMap, orderBy, Asc, limit, offset)
 	args = RemoveZero(args)
+	if PrintSQL==true{
+		fmt.Println(sql)
+		fmt.Println(args...)
+	}
 	return db.Select(dest, sql, args...)
 }
 
@@ -156,6 +170,10 @@ func DynamicUpdate(dbKey string, basicSql string, whereMap [][]string,  args ...
 	}
 	sql := RollingSql(basicSql, whereMap, nil, "", -1, -1)
 	args = RemoveZero(args)
+	if PrintSQL==true{
+		fmt.Println(sql)
+		fmt.Println(args...)
+	}
 	_,er:=db.Exec( sql, args...)
 	return er
 }
@@ -163,6 +181,7 @@ func DynamicUpdate(dbKey string, basicSql string, whereMap [][]string,  args ...
 func DynamicInsert(dbKey string,basicSql string,columns []string,args ...interface{}){
 
 }
+
 //Only prepare exec without tx.RollBack() and tx.Commit()
 func DynamicSelectOneSpecificTx(tx *sqlx.Tx, dest interface{}, basicSql string, whereMap [][]string, orderBy []string, Asc string, limit int, offset int, args ...interface{}) error {
 	if tx==nil {
@@ -170,6 +189,10 @@ func DynamicSelectOneSpecificTx(tx *sqlx.Tx, dest interface{}, basicSql string, 
 	}
 	sql := RollingSql(basicSql, whereMap, orderBy, Asc, limit, offset)
 	args = RemoveZero(args)
+	if PrintSQL==true{
+		fmt.Println(sql)
+		fmt.Println(args...)
+	}
 	return tx.Get(dest, sql, args...)
 }
 
@@ -180,6 +203,10 @@ func DynamicSelectSpecificTx(tx *sqlx.Tx, dest interface{}, basicSql string, whe
 	}
 	sql := RollingSql(basicSql, whereMap, orderBy, Asc, limit, offset)
 	args = RemoveZero(args)
+	if PrintSQL==true{
+		fmt.Println(sql)
+		fmt.Println(args...)
+	}
 	return tx.Select(dest, sql, args...)
 }
 
@@ -190,6 +217,10 @@ func DynamicUpdateSpecificTx(tx *sqlx.Tx, basicSql string, whereMap [][]string, 
 	}
 	sql := RollingSql(basicSql, whereMap, nil, "", -1, -1)
 	args = RemoveZero(args)
+	if PrintSQL==true{
+		fmt.Println(sql)
+		fmt.Println(args...)
+	}
 	_,er:=tx.Exec( sql, args...)
 	return er
 }
@@ -202,6 +233,10 @@ func SelectOne(dbKey string, dest interface{},sql string,args...interface{})erro
 	} else {
 		db = Dbs[dbKey]
 	}
+	if PrintSQL==true{
+		fmt.Println(sql)
+		fmt.Println(args...)
+	}
 	return db.Get(dest,sql,args...)
 }
 //normal query objects array
@@ -212,16 +247,28 @@ func Select(dbKey string, dest interface{},sql string,args...interface{})error{
 	} else {
 		db = Dbs[dbKey]
 	}
+	if PrintSQL==true{
+		fmt.Println(sql)
+		fmt.Println(args...)
+	}
 	return db.Select(dest,sql,args...)
 }
 
 //normal delete
 func Delete(dbKey string,sql string,args...interface{})error{
+	if PrintSQL==true{
+		fmt.Println(sql)
+		fmt.Println(args...)
+	}
 	return Exec(dbKey,sql ,args...)
 }
 
 //normal update
 func Update(dbKey string,sql string,args...interface{})error{
+	if PrintSQL==true{
+		fmt.Println(sql)
+		fmt.Println(args...)
+	}
 	return Exec(dbKey,sql ,args...)
 }
 
@@ -232,6 +279,10 @@ func Exec(dbKey string,sql string,args...interface{})error{
 		db = Dbs["default"]
 	} else {
 		db = Dbs[dbKey]
+	}
+	if PrintSQL==true{
+		fmt.Println(sql)
+		fmt.Println(args...)
 	}
 	_,er :=db.Exec(sql,args...)
 	return er
@@ -333,20 +384,26 @@ func RemoveZero(slice []interface{}) []interface{} {
 	return slice
 }
 
+//判断一个值是否为零值，只支持string,float,int,time 以及其各自的指针，"%"和"%%"也属于零值范畴，场景是like语句
 func IfZero(arg interface{}) bool {
 	if arg == nil {
 		return true
 	}
 	switch v := arg.(type) {
-	case int, float64, int32, int16, int64, float32:
+	case int, int32, int16, int64:
 		if v == 0 {
 			return true
 		}
+	case float32:
+		r:=float64(v)
+		return math.Abs(r-0)<0.0000001
+	case float64:
+		return math.Abs(v-0)<0.0000001
 	case string:
 		if v == "" || v == "%%" || v == "%" {
 			return true
 		}
-	case *string, *int, *int64, *int32, *int16, *int8, *float32, *float64:
+	case *string, *int, *int64, *int32, *int16, *int8, *float32, *float64, *time.Time:
 		if v == nil {
 			return true
 		}
@@ -357,6 +414,7 @@ func IfZero(arg interface{}) bool {
 	}
 	return false
 }
+
 
 //generate where through a where [][]string
 func GenWhere(whereMap [][]string)string {
